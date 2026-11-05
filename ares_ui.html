@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Ares-1 Advanced Rover Command Center v5</title>
+<style>
+:root{--bg-color:#05070b;--panel-bg:rgba(11,15,25,.95);--border-color:#1e293b;--accent-green:#10b981;--accent-cyan:#06b6d4;--accent-red:#ef4444;--accent-orange:#f59e0b;--accent-purple:#8b5cf6;--text-main:#f8fafc;--text-muted:#94a3b8}
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Roboto,Helvetica,Arial,sans-serif}
+body{background-color:var(--bg-color);color:var(--text-main);min-height:100vh;padding:15px;background-image:radial-gradient(circle at 50% 20%,#0f1c3f 0%,#05070b 100%)}
+header{display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid var(--border-color);padding-bottom:12px;margin-bottom:15px}
+.logo h1{font-size:1.3rem;color:var(--accent-cyan);letter-spacing:1.5px;text-transform:uppercase}
+.logo p{font-size:.75rem;color:var(--text-muted)}
+.status-badge{background:rgba(16,185,129,.15);border:1px solid var(--accent-green);color:var(--accent-green);padding:6px 12px;border-radius:20px;font-size:.75rem;font-weight:bold;display:flex;align-items:center;gap:6px}
+.pulse{width:8px;height:8px;background-color:var(--accent-green);border-radius:50%;box-shadow:0 0 10px var(--accent-green);animation:pulse 1.5s infinite}
+@keyframes pulse{0%{transform:scale(.95);opacity:.8}50%{transform:scale(1.4);opacity:1}100%{transform:scale(.95);opacity:.8}}
+.grid-container{display:grid;grid-template-columns:1fr;gap:15px;max-width:1400px;margin:0 auto}
+@media(min-width:950px){.grid-container{grid-template-columns:1.5fr 1fr}}
+.panel{background:var(--panel-bg);border:1px solid var(--border-color);border-radius:12px;padding:16px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+.panel h2{font-size:.95rem;color:var(--accent-cyan);margin-bottom:12px;border-left:3px solid var(--accent-cyan);padding-left:8px;text-transform:uppercase;letter-spacing:.5px;display:flex;justify-content:space-between;align-items:center}
+.mode-selector{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px}
+.btn-mode{background:#1e293b;color:var(--text-muted);border:1px solid #334155;padding:10px 6px;font-size:.75rem;font-weight:bold;border-radius:6px;cursor:pointer;text-align:center;transition:all .2s}
+.btn-mode.active{background:var(--accent-cyan);color:#000;border-color:var(--accent-cyan);box-shadow:0 0 12px rgba(6,182,212,.4)}
+.camera-container{position:relative;width:100%;height:340px;background:#000;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;border:1px solid #334155;transition:filter .3s ease}
+.cam-placeholder{color:var(--text-muted);text-align:center;font-size:.9rem;line-height:1.5}
+.cam-controls{display:flex;justify-content:space-between;align-items:center;margin-top:10px}
+.thermal-active{filter:invert(100%) hue-rotate(180deg) contrast(180%) saturate(250%)!important}
+.controls-wrapper{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.sub-control-box{background:rgba(15,23,42,.6);border:1px solid var(--border-color);border-radius:8px;padding:12px;text-align:center}
+.sub-control-box h3{font-size:.75rem;color:var(--text-muted);margin-bottom:10px;text-transform:uppercase}
+.control-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;max-width:190px;margin:0 auto}
+.btn-ctrl{background:#1e293b;color:var(--text-main);border:1px solid #334155;padding:10px;font-size:.9rem;font-weight:bold;border-radius:6px;cursor:pointer;user-select:none}
+.btn-ctrl:active{background:var(--accent-cyan);color:#000}
+.btn-stop{background:rgba(239,68,68,.25);border-color:var(--accent-red);color:var(--accent-red)}
+.tank-btn-row{display:flex;gap:6px;justify-content:center;margin-bottom:6px}
+.btn-tank{background:#1e293b;color:var(--accent-purple);border:1px solid #334155;padding:8px;font-size:.7rem;font-weight:bold;border-radius:6px;cursor:pointer;flex:1;user-select:none}
+.btn-tank:active{background:var(--accent-purple);color:#fff}
+.empty-cell{visibility:hidden}
+.meters-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.meter-box{background:rgba(15,23,42,.7);border:1px solid var(--border-color);border-radius:8px;padding:10px;text-align:center}
+.meter-title{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:6px;font-weight:bold}
+.meter-val{font-size:.95rem;font-weight:bold;color:var(--accent-cyan);margin-bottom:6px}
+.meter-bar-container{width:100%;height:6px;background:#1e293b;border-radius:3px;overflow:hidden}
+.meter-bar-fill{height:100%;width:65%;background:var(--accent-green);transition:width .3s ease;border-radius:3px}
+.extra-boxes-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.extra-box{background:rgba(15,23,42,.85);border:1px solid var(--border-color);border-radius:8px;padding:10px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:70px}
+.extra-box-title{font-size:.65rem;color:var(--text-muted);text-transform:uppercase;margin-bottom:4px}
+.extra-box-val{font-size:.95rem;font-weight:bold;color:var(--accent-cyan)}
+.radar-box{background:rgba(15,23,42,.85);border:1px solid var(--border-color);border-radius:8px;padding:12px;text-align:center;margin-top:12px}
+.radar-canvas-container{position:relative;width:100%;height:140px;background:#020617;border-radius:6px;overflow:hidden;border:1px solid #1e293b;display:flex;align-items:center;justify-content:center}
+canvas{display:block}
+.settings-group{margin-top:12px}
+.settings-group label{font-size:.75rem;color:var(--text-muted);display:block;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--accent-cyan)}
+.btn-action{padding:6px 10px;border-radius:6px;border:none;font-weight:bold;cursor:pointer;font-size:.75rem}
+.btn-on{background:var(--accent-green);color:#000}
+.btn-off{background:#334155;color:var(--text-main)}
+.btn-thermal{background:rgba(245,158,11,.2);border:1px solid var(--accent-orange);color:var(--accent-orange)}
+.btn-thermal.active{background:var(--accent-orange);color:#000}
+.btn-mapping{width:100%;margin-top:8px;background:rgba(6,182,212,.15);border:1px solid var(--accent-cyan);color:var(--accent-cyan);padding:8px;font-size:.75rem;font-weight:bold;border-radius:6px;cursor:pointer;transition:all .2s}
+.btn-mapping:hover{background:var(--accent-cyan);color:#000}
+.system-logs{margin-top:12px;background:#020408;border:1px solid #1e293b;border-radius:6px;padding:8px;font-family:monospace;font-size:.7rem;color:var(--accent-cyan);height:85px;overflow-y:auto}
+#mappingModal{display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(2,6,23,.9);z-index:9999;align-items:center;justify-content:center;flex-direction:column}
+.modal-box{width:85%;height:75%;background:#020813;border:2px solid var(--accent-cyan);border-radius:10px;position:relative;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 30px rgba(6,182,212,.3)}
+.modal-header{padding:10px 15px;background:rgba(15,23,42,.9);border-bottom:1px solid var(--border-color);display:flex;justify-content:space-between;align-items:center;color:var(--accent-cyan);font-size:.9rem;font-weight:bold}
+.modal-body{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#081d2f 0%,#01040a 100%);color:var(--accent-green);font-family:monospace;position:relative}
+.close-btn{background:var(--accent-red);border:none;color:#fff;padding:4px 10px;border-radius:4px;cursor:pointer;font-weight:bold}
+</style></head>
+<body>
+<header><div class="logo"><h1>Ares-1 Rover Command</h1><p>Multi-Mode AI &amp; Advanced Telemetry Hub</p></div><div class="status-badge" id="globalStatus"><div class="pulse"></div> MANUAL MODE</div></header>
+<div class="grid-container">
+<div class="panel">
+<h2>Select Operation Mode</h2>
+<div class="mode-selector"><button class="btn-mode active" id="modeManual" onclick="setMode('MANUAL')">Manual UI</button><button class="btn-mode" id="modeLlama" onclick="setMode('LLAMA')">Llama AI</button><button class="btn-mode" id="modeAuto" onclick="setMode('AUTONOMOUS')">Arduino Auto</button></div>
+<h2><span>Live Reconnaissance Feed</span><span style="font-size:.7rem;color:var(--accent-cyan);">HD Stream</span></h2>
+<div class="camera-container" id="camContainer"><div class="cam-placeholder" id="camPlaceholderText">[ Camera Feed Offline ]<br>Click "Cam ON" to initialize stream</div></div>
+<div class="cam-controls"><span style="font-size:.75rem;color:var(--text-muted);" id="streamStatus">Status: Standby</span><div style="display:flex;gap:6px;align-items:center;"><button class="btn-action btn-on" onclick="toggleCamera(true)">Cam ON</button><button class="btn-action btn-off" onclick="toggleCamera(false)">Cam OFF</button><select id="camQ" class="btn-action" onchange="setCamQuality(this.value)" title="Camera quality"><option value="0" selected>160x120 (lowest)</option><option value="1">320x240</option><option value="2">400x296</option><option value="3">480x320</option><option value="4">640x480 (480p)</option><option value="5">800x600</option><option value="6">1024x768</option><option value="7">1280x720 (720p)</option></select><button class="btn-action btn-thermal" id="thermalBtn" onclick="toggleThermalFilter()">Thermal Camera: OFF</button></div></div>
+<h2 style="margin-top:15px;">Locomotion &amp; Steering (WASD Supported)</h2>
+<div class="controls-wrapper">
+<div class="sub-control-box"><h3>Standard Motion</h3><div class="control-pad"><div class="empty-cell"></div><button class="btn-ctrl" onclick="sendCmd('FORWARD')">▲</button><div class="empty-cell"></div><button class="btn-ctrl" onclick="sendCmd('LEFT')">◀</button><button class="btn-ctrl btn-stop" onclick="sendCmd('STOP')">■</button><button class="btn-ctrl" onclick="sendCmd('RIGHT')">▶</button><div class="empty-cell"></div><button class="btn-ctrl" onclick="sendCmd('BACKWARD')">▼</button><div class="empty-cell"></div></div></div>
+<div class="sub-control-box"><h3>Tank &amp; 360° Steering</h3><div style="display:flex;flex-direction:column;gap:6px;margin-top:5px;">
+<div class="tank-btn-row"><button class="btn-tank" onclick="sendCmd('360_SPIN_L')">↺ 360° Spin L</button><button class="btn-tank" onclick="sendCmd('360_SPIN_R')">↻ 360° Spin R</button></div>
+<div class="tank-btn-row"><button class="btn-tank" onclick="sendCmd('L_TRACK')">L-Track Fwd</button><button class="btn-tank" onclick="sendCmd('R_TRACK')">R-Track Fwd</button></div>
+<div class="tank-btn-row"><button class="btn-tank" onclick="sendCmd('PIVOT_L')">Pivot Left</button><button class="btn-tank" onclick="sendCmd('PIVOT_R')">Pivot Right</button></div>
+</div></div></div>
+<div class="settings-group"><label>Motor Speed Throttle (0 - 100%)</label><input type="range" id="speedRange" min="0" max="100" value="15" onchange="updateSpeed(this.value)"><div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--text-muted);margin-top:3px;"><span>0% (Stop)</span><span id="speedVal" style="color:var(--accent-cyan);font-weight:bold;">15%</span><span>100% (Max)</span></div></div>
+</div>
+<div class="panel">
+<h2>Professional Sensor Hub</h2>
+<div class="meters-grid">
+<div class="meter-box"><div class="meter-title">WiFi Signal</div><div class="meter-val" id="wifiVal">-54 dBm</div><div class="meter-bar-container"><div class="meter-bar-fill" id="wifiBar" style="width:78%;background:var(--accent-green);"></div></div></div>
+<div class="meter-box"><div class="meter-title">Radiation Level</div><div class="meter-val" id="radVal">0.12 µSv/h</div><div class="meter-bar-container"><div class="meter-bar-fill" id="radBar" style="width:25%;background:var(--accent-orange);"></div></div></div>
+<div class="meter-box"><div class="meter-title">Battery / Temp</div><div class="meter-val" id="batteryTempVal" style="font-size:.85rem;color:var(--accent-green);">12.2V | -48°C</div><div class="meter-bar-container"><div class="meter-bar-fill" style="width:90%;background:var(--accent-cyan);"></div></div></div>
+</div>
+<div class="radar-box"><h2><span style="font-size:.75rem;">180° Ultrasonic Radar Sweep</span><span style="font-size:.7rem;color:var(--accent-green);" id="radarDistText">Target: -- cm</span></h2><div class="radar-canvas-container"><canvas id="radarCanvas" width="320" height="140"></canvas></div><button class="btn-mapping" onclick="toggle3DMapppingModal(true)">View 3D Terrain Map</button></div>
+<h2 style="margin-top:12px;">System Console Log</h2>
+<div class="system-logs" id="sysLogs"><div>[SYS] UI v5 Loaded successfully.</div><div>[RADAR] 180° Sweep Matrix operational.</div><div>[RADIATION] Sensor telemetry active.</div></div>
+<div class="extra-boxes-grid">
+<div class="extra-box"><div class="extra-box-title">Gas Sensor (MQ-2)</div><div class="extra-box-val" id="box1Val">124 ppm</div></div>
+<div class="extra-box"><div class="extra-box-title">Humidity</div><div class="extra-box-val" id="box2Val">45.2%</div></div>
+<div class="extra-box"><div class="extra-box-title">Pressure</div><div class="extra-box-val" id="box3Val">1013 hPa</div></div>
+<div class="extra-box"><div class="extra-box-title">UV Index</div><div class="extra-box-val" id="box4Val">3.4 UV</div></div>
+<div class="extra-box"><div class="extra-box-title">CPU Load</div><div class="extra-box-val" id="box5Val">18%</div></div>
+<div class="extra-box"><div class="extra-box-title">Dynamic Rad (R)</div><div class="extra-box-val" id="box6RadVal" style="color:var(--accent-orange);">0.15 µSv</div></div>
+</div></div></div>
+<div id="mappingModal"><div class="modal-box"><div class="modal-header"><span>3D ULTRASONIC TERRAIN MAPPER</span><button class="close-btn" onclick="toggle3DMapppingModal(false)">X</button></div><div class="modal-body"><div>[ 3D POINT-CLOUD TERRAIN SCANNING IN PROGRESS... ]</div></div></div></div>
+<script>
+const ROVER_HOST=(function(){try{var q=new URLSearchParams(location.search).get("rover");if(q){localStorage.setItem("roverHost",q);return q;}}catch(e){}if(location.protocol==="http:"&&location.hostname&&location.hostname!=="localhost")return location.hostname;try{var h=localStorage.getItem("roverHost")||"ares-rover.local";var p=prompt("Rover address (IP, or ares-rover.local)",h);if(p){p=p.trim();localStorage.setItem("roverHost",p);return p;}return h;}catch(e){return "ares-rover.local";}})();
+function logMsg(msg){const logs=document.getElementById('sysLogs');const entry=document.createElement('div');entry.textContent=msg;logs.appendChild(entry);logs.scrollTop=logs.scrollHeight;}
+function sendCmd(cmd){
+logMsg("[CMD] Sent: "+cmd);
+if(navigator.vibrate)navigator.vibrate(30);
+let c=cmd;
+if(cmd=='FORWARD')c='F';
+if(cmd=='BACKWARD')c='B';
+if(cmd=='LEFT')c='L';
+if(cmd=='RIGHT')c='R';
+if(cmd=='STOP')c='S';
+if(cmd=='360_SPIN_L')c='Q';
+if(cmd=='360_SPIN_R')c='E';
+if(cmd=='L_TRACK')c='LF';
+if(cmd=='R_TRACK')c='RF';
+if(cmd=='PIVOT_L')c='PL';
+if(cmd=='PIVOT_R')c='PR';
+fetch(`http://${ROVER_HOST}/cmd?dir=${encodeURIComponent(c)}`,{mode:'no-cors'}).catch(err=>logMsg(`[ERR] Command ${cmd} failed`));
+}
+function updateSpeed(val){
+document.getElementById('speedVal').innerText=val+"%";
+logMsg("[SET] Motor Speed: "+val+"%");
+fetch(`http://${ROVER_HOST}/cmd?dir=SPEED_${val}`,{mode:'no-cors'}).catch(err=>console.error("Speed update error:",err));
+}
+let camWanted=false;
+function toggleCamera(state){
+camWanted=state;
+const container=document.getElementById('camContainer');const status=document.getElementById('streamStatus');
+container.innerHTML='';
+if(state){
+const img=document.createElement('img');
+const streamUrl=`http://${ROVER_HOST}:81/stream?t=${Date.now()}`;
+img.src=streamUrl;img.style.width='100%';img.style.height='100%';img.style.objectFit='cover';
+img.onerror=function(){handleCamError(this);};
+img.onload=function(){status.innerText="Status: Live";status.style.color="var(--accent-green)";logMsg("[CAM] Stream Started (Port 81).");};
+container.appendChild(img);
+status.innerText="Status: Connecting...";status.style.color="var(--accent-cyan)";
+}else{
+container.innerHTML='<div class="cam-placeholder">[ Camera Feed Standby ]<br>Click "Cam ON" to initialize stream</div>';
+status.innerText="Status: Standby";status.style.color="var(--text-muted)";logMsg("[CAM] Stream Stopped.");
+}
+}
+let isThermalActive=false;
+function toggleThermalFilter(){
+const container=document.getElementById('camContainer');const btn=document.getElementById('thermalBtn');
+isThermalActive=!isThermalActive;
+if(isThermalActive){container.classList.add('thermal-active');btn.classList.add('active');btn.innerText="Thermal Camera: ON";logMsg("[CAM] Thermal Camera Enabled.");}
+else{container.classList.remove('thermal-active');btn.classList.remove('active');btn.innerText="Thermal Camera: OFF";logMsg("[CAM] Thermal Camera Disabled.");}
+}
+function toggle3DMapppingModal(show){const modal=document.getElementById('mappingModal');modal.style.display=show?'flex':'none';if(show)logMsg("[MAP] Opened 3D Terrain Mapper.");}
+function setCamQuality(v){fetch(`http://${ROVER_HOST}/quality?q=${v}`,{mode:'no-cors'}).then(()=>logMsg("[CAM] Quality preset "+v+" requested.")).catch(()=>{});}
+function handleCamError(img){
+if(img&&img.parentNode)img.parentNode.removeChild(img);
+document.getElementById('camContainer').innerHTML=`<div class="cam-placeholder" style="color:var(--accent-red)">[ Stream Disconnected ]<br>Check Rover WiFi Connection</div>`;
+document.getElementById('streamStatus').innerText="Status: Error";
+document.getElementById('streamStatus').style.color="var(--accent-red)";
+logMsg("[ERR] Camera stream connection lost.");
+if(camWanted)setTimeout(function(){if(camWanted)toggleCamera(true);},2000);
+}
+function setMode(mode){
+document.querySelectorAll('.btn-mode').forEach(b=>b.classList.remove('active'));
+if(mode==='MANUAL')document.getElementById('modeManual').classList.add('active');
+if(mode==='LLAMA')document.getElementById('modeLlama').classList.add('active');
+if(mode==='AUTONOMOUS')document.getElementById('modeAuto').classList.add('active');
+document.getElementById('globalStatus').innerHTML=`<div class="pulse"></div> ${mode} MODE`;
+logMsg("[MODE] Switched to: "+mode);
+fetch(`http://${ROVER_HOST}/cmd?dir=MODE_${mode}`,{mode:'no-cors'}).catch(err=>console.error("Mode update error:",err));
+}
+window.addEventListener('keydown',(e)=>{
+if(e.repeat)return;
+switch(e.key.toLowerCase()){
+case 'w':case 'arrowup':sendCmd('FORWARD');break;
+case 'a':case 'arrowleft':sendCmd('LEFT');break;
+case 's':case 'arrowdown':sendCmd('BACKWARD');break;
+case 'd':case 'arrowright':sendCmd('RIGHT');break;
+case ' ':sendCmd('STOP');break;
+}
+});
+setInterval(()=>{
+fetch(`http://${ROVER_HOST}/signal`).then(res=>res.text()).then(rssi=>{
+let val=parseInt(rssi);
+if(!isNaN(val)){document.getElementById('wifiVal').innerText=val+" dBm";let bar=Math.min(Math.max((val+100)*2,10),100);document.getElementById('wifiBar').style.width=bar+"%";}
+}).catch(()=>{});
+},600000);
+/* real ultrasonic distance from the Uno (via ESP32 /data) */
+setInterval(()=>{
+fetch(`http://${ROVER_HOST}/data`).then(r=>r.json()).then(j=>{
+document.getElementById('radarDistText').innerText="Target: "+(j.d>=200?">200":j.d)+" cm";
+}).catch(()=>{});
+},300);
+setInterval(()=>{
+const randomRad=(Math.random()*(0.45-0.05)+0.05).toFixed(2);
+const radValEl=document.getElementById('radVal');const radBarEl=document.getElementById('radBar');
+if(radValEl)radValEl.innerText=randomRad+" µSv/h";
+if(radBarEl){const barWidth=Math.floor((randomRad/0.5)*100);radBarEl.style.width=barWidth+"%";radBarEl.style.background=randomRad>0.30?"var(--accent-red)":"var(--accent-orange)";}
+document.getElementById('box1Val').innerText=Math.floor(Math.random()*20+110)+" ppm";
+document.getElementById('box2Val').innerText=(Math.random()*5+42).toFixed(1)+"%";
+document.getElementById('box3Val').innerText=Math.floor(Math.random()*10+1010)+" hPa";
+document.getElementById('box4Val').innerText=(Math.random()*1.5+2.5).toFixed(1)+" UV";
+document.getElementById('box5Val').innerText=Math.floor(Math.random()*15+12)+"%";
+document.getElementById('box6RadVal').innerText=randomRad+" µSv";
+},2000);
+const canvas=document.getElementById('radarCanvas');const ctx=canvas.getContext('2d');
+let angle=0;let radarDir=1;
+function drawRadar(){
+ctx.fillStyle='#020617';ctx.fillRect(0,0,canvas.width,canvas.height);
+const cx=canvas.width/2;const cy=canvas.height-10;const radius=120;
+ctx.strokeStyle='rgba(6, 182, 212, 0.2)';ctx.lineWidth=1.5;
+for(let r=40;r<=radius;r+=40){ctx.beginPath();ctx.arc(cx,cy,r,Math.PI,2*Math.PI);ctx.stroke();}
+for(let a=0;a<=Math.PI;a+=Math.PI/4){ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+radius*Math.cos(a-Math.PI),cy+radius*Math.sin(a-Math.PI));ctx.stroke();}
+angle+=0.02*radarDir;
+if(angle>Math.PI||angle<0){radarDir*=-1;}
+const x=cx+radius*Math.cos(angle-Math.PI);const y=cy+radius*Math.sin(angle-Math.PI);
+ctx.save();ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,radius,angle-Math.PI-0.2,angle-Math.PI);ctx.closePath();ctx.fillStyle='rgba(16, 185, 129, 0.25)';ctx.fill();ctx.restore();
+ctx.strokeStyle='#10b981';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(x,y);ctx.stroke();
+requestAnimationFrame(drawRadar);
+}
+drawRadar();
+/* press-and-hold: दबाए रखो तो चले, छोड़ते ही STOP */
+const HOLD=['FORWARD','BACKWARD','LEFT','RIGHT','360_SPIN_L','360_SPIN_R','L_TRACK','R_TRACK','PIVOT_L','PIVOT_R'];
+let holdTimer=null;
+function startHold(cmd){stopHold(false);sendCmd(cmd);holdTimer=setInterval(()=>fetch(`http://${ROVER_HOST}/cmd?dir=${cmd}`,{mode:'no-cors'}).catch(()=>{}),200);}
+function stopHold(send){if(holdTimer){clearInterval(holdTimer);holdTimer=null;if(send)sendCmd('STOP');}}
+function holdOf(b){const m=(b.getAttribute('onclick')||'').match(/sendCmd\('(\w+)'\)/);return m&&HOLD.includes(m[1])?m[1]:null;}
+document.querySelectorAll('.btn-ctrl,.btn-tank').forEach(b=>{
+  const cmd=holdOf(b);if(!cmd)return;
+  let down=false;
+  b.style.touchAction='none';
+  b.addEventListener('contextmenu',e=>e.preventDefault());
+  b.addEventListener('pointerdown',e=>{e.preventDefault();down=true;startHold(cmd);});
+  ['pointerup','pointerleave','pointercancel'].forEach(t=>b.addEventListener(t,()=>{if(down){down=false;stopHold(true);}}));
+});
+document.addEventListener('click',e=>{const b=e.target.closest('.btn-ctrl,.btn-tank');if(b&&holdOf(b))e.stopPropagation();},true);
+const KEYMAP={w:'FORWARD',arrowup:'FORWARD',s:'BACKWARD',arrowdown:'BACKWARD',a:'LEFT',arrowleft:'LEFT',d:'RIGHT',arrowright:'RIGHT'};
+window.addEventListener('keydown',e=>{const c=KEYMAP[e.key.toLowerCase()];if(c&&!e.repeat)startHold(c);});
+window.addEventListener('keyup',e=>{if(KEYMAP[e.key.toLowerCase()])stopHold(true);});
+</script>
+</body></html>
